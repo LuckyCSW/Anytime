@@ -439,14 +439,14 @@ var data = {
   datasets: [
     {
       label: 'Dataset 1',
-      data: [2.0, 3.0, 4.0], // Y축 데이터
+      data: [2.24, 3.89, 3.58], // Y축 데이터
       borderColor: 'rgb(255,99,132)',
       backgroundColor : 'rgba(255,99,132,0.5)',
       yAxisID : 'y'
     },
     {
       label : 'Dataset2',
-      data : [], // Y축 데이터
+      data : [3.50 , 4.25, 4.07], // Y축 데이터
       borderColor :'rgb(54 ,162 ,235)',
       backgroundColor :'rgba(54 ,162 ,235 ,0 .5)',
      yAxisID :'y1'
