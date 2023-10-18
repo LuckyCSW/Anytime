@@ -1,6 +1,7 @@
 package com.naver.anytime.controller;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +74,12 @@ public class CreditController {
 		if (credit != null) {
 			mv.addObject("credit", credit);
 		}
-
+      
 		// 학점 계산 로직 추가
 		double totalGradePoints = 0.0;
 		double majorGradePoints = 0.0;
 		int majorCredits = 0;
-
+		
 		Map<String, Double> gradeValueMap = new HashMap<>() {
 			{
 				put("A+", 4.5); put("A0", 4.3); put("A-", 4.0);
@@ -110,8 +111,52 @@ public class CreditController {
 		mv.addObject("totalgpa", formattedTotalGpa);
 		mv.addObject("totalmajor", formattedMajorGpa);
 
-		mv.setViewName("credit/credit");
+		/*=========================================================================================================*/
+		// 각 학기별 성적 계산 로직 시작
+		List<Map<String, String>> maplist = new ArrayList<>();
+		    
+		    for(Semester semester : semesters) {
+		    	Map<String, String> map = new HashMap<>(); 
+		    	double totalCredit = 0;
+		    	double weightedSum = 0;//학점 * 점수
+		    	double weightedMajorSum = 0;
+			    double totalMajorCredit = 0;
+		    	
+			    int semester_id = semester.getSemester_id();
+			    
+			    List<Semester_detail> detailPerSemester = semester_detailservice.getDetailPerSemester(semester_id); //학기별
+			    
+			    for (Semester_detail detail : detailPerSemester) {
+					double gradeValue = gradeValueMap.get(detail.getGrade());
+					
+					totalCredit+=detail.getCredit();
+					weightedSum += gradeValue * detail.getCredit();//학점 * 점수
+					totalGradePoints += gradeValue * detail.getCredit();
 
+					if(detail.isMajor()){
+			        	totalMajorCredit = detail.getCredit();
+			        	weightedMajorSum = gradeValue * detail.getCredit();
+			        }
+				}
+			    double gpa=(totalCredit > 0) ?  (weightedSum / totalCredit) : 0; //평점
+				double major =(totalMajorCredit >0) ? (weightedMajorSum / totalMajorCredit) : 0;//전공
+				
+				map.put("Gpa", String.format("%.2f", gpa));
+				map.put("Major", String.format("%.2f", major));
+				
+				if(gpa != 0.00 && major != 0.00) {
+					maplist.add(map);
+				}
+				
+				
+		    }//총 학기별 총 학점, 
+		mv.addObject("gpa", maplist);
+		mv.setViewName( "credit/credit" );
+		
+		
+		List<Semester> semestername = semesterservice.getSemesternameByUserId(user_id);
+		mv.addObject("semestername", semestername);
+		
 		return mv;
 	}
 
