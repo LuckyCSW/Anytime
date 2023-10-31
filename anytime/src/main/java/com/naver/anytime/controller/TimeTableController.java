@@ -11,15 +11,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.naver.anytime.domain.TimeTable;
 import com.naver.anytime.domain.TimeTable_detail;
+import com.naver.anytime.domain.UserCustom;
 import com.naver.anytime.service.MemberService;
+import com.naver.anytime.service.SchoolService;
 import com.naver.anytime.service.TimeTableService;
 import com.naver.anytime.service.TimeTable_detailService;
 
@@ -31,38 +35,36 @@ public class TimeTableController {
 	private TimeTableService timeTableService;
 	private TimeTable_detailService timeTable_detailService;
 	private MemberService memberService;
+	private SchoolService schoolService;
 
 	@Autowired
 	public TimeTableController(TimeTableService timeTableService, TimeTable_detailService timeTable_detailService,
-			MemberService memberService) {
+			MemberService memberService, SchoolService schoolService) {
 		this.timeTableService = timeTableService;
 		this.timeTable_detailService = timeTable_detailService;
 		this.memberService = memberService;
+		this.schoolService = schoolService;
 	}
 
 	// 시간표 View 출력
 	@RequestMapping(value = "/timetable", method = RequestMethod.GET)
-	public String timeTable() {
-		return "timetable/timeTable";
-	}
-//	
-//	@RequestMapping(value = "/timetable/{timetable_id}", method = RequestMethod.GET)
-//	public String getTimeTable(@PathVariable("timetable_id") int timetable_id, Model model) {
-//		logger.info("입장");
-//		logger.info("시간표 아이디" + timetable_id);
-//		// 시간표 ID에 해당하는 데이터 가져오기
-//	    TimeTable timetable = timeTableService.getTimeTableById(timetable_id);
-//	    
-//	    if (timetable == null) {
-//	        throw new RuntimeException("timetable_ID: " + timetable_id);
-//	    }	
-//	    
-//	    // 모델에 데이터 추가
-//	    model.addAttribute("timeTable", timetable);
-//	    
-//	    return "timetable/timeTable";  
-//	}
+	public ModelAndView timeTable(
+			@AuthenticationPrincipal UserCustom user,
+			ModelAndView mv) {
+		
+		Map<String, Object> school = new HashMap<String, Object>();
+		String school_name = schoolService.getSchoolNameById(user.getSchool_id());
 
+		school.put("id", user.getSchool_id());
+		school.put("name", school_name);
+		school.put("domain", schoolService.getSchoolDomain(school_name));
+		mv.setViewName("timetable/timeTable");
+		mv.addObject("school", school);
+		return mv;
+		
+	}
+	
+	// 시간표 학기별로 출력
 	@RequestMapping(value = "/getTimetableByUserIdAndSemester", method = RequestMethod.POST)
 	@ResponseBody
 	public List<TimeTable> getTimetableBySemester(
@@ -91,13 +93,14 @@ public class TimeTableController {
 		}
 		return timetable;
 	}
-
+	
+	// 시간표 이름 출력
 	@RequestMapping(value = "/updateTimetable", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<String> updateTimetable(@RequestParam int timetable_id, 
-											@RequestParam String newName,
-											@RequestParam int  status,
-											Principal userPrincipal) {
+												  @RequestParam String newName,
+												  @RequestParam int  status,
+												  Principal userPrincipal) {
 		try {
 			logger.info("기본시간표 : "+status);
 			String id = userPrincipal.getName();
@@ -108,7 +111,8 @@ public class TimeTableController {
 			return new ResponseEntity<>("이름 변경 실패", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
+	
+	// 새 시간표 생성
 	@RequestMapping(value = "/createNewTimeTable", method = RequestMethod.POST)
 	@ResponseBody
 	public TimeTable createNewTimeTable(@RequestParam(value = "semester") String semester, Principal userPrincipal) {
@@ -132,25 +136,35 @@ public class TimeTableController {
 		return map;
 	}
 	
+	// 새 수업 추가
 	@RequestMapping(value="/addSubject", method=RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<String> addSubject(TimeTable_detail detail) {
+	public ResponseEntity<Map<String, Object>> addSubject(TimeTable_detail detail) {
+	   Map<String, Object> result = new HashMap<>();
 	   try {
 	      
 	      timeTable_detailService.addSubject(detail); 
 	      
-	     return new ResponseEntity<>("새로운 과목이 성공적으로 추가되었습니다.", HttpStatus.OK);
+	      result.put("newClass", detail);
+	      
+	      result.put("message", "새로운 과목이 성공적으로 추가되었습니다.");
+	      result.put("status", "success");
+	      return new ResponseEntity<>(result, HttpStatus.OK);
 	  } catch(Exception e) {
 	     logger.error("과목 추가 실패 : ", e);
-	     return new ResponseEntity<>("과목을 추가하는 동안 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+
+	     result.put("message", "과목을 추가하는 동안 오류가 발생했습니다.");
+	     result.put("status", "error");
+	     return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
 	  }
 	}
-	
+
+	// 생성 시간표 삭제
 	@RequestMapping(value = "/deleteTimetable", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<Map<String, String>> deleteTimetable(@RequestParam(value = "timetable_id") int timetable_id,
-																@RequestParam(value = "status") int status,
-																Principal userPrincipal) {
+															   @RequestParam(value = "status") int status,
+															   Principal userPrincipal) {
 	    HashMap<String, String> result = new HashMap<>();
 	    try {
 	    	String id = userPrincipal.getName();
@@ -165,8 +179,25 @@ public class TimeTableController {
 	        return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
-
-
 	
+	// 추가수업 삭제
+	@RequestMapping(value = "/deleteSubject", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<?> deleteSubject(@RequestParam("timetable_id") int timetable_id, 
+											@RequestParam("subject_id") int subject_id,
+											Principal userPrincipal) {
+		try {
+	        String id = userPrincipal.getName();
+	        timeTable_detailService.deleteSubject(memberService.getUserId(id), timetable_id, subject_id);
+	        
+	        Map<String, String> response = new HashMap<>();
+	        response.put("message", "수업 삭제 성공");
+	        return new ResponseEntity<>(response, HttpStatus.OK);
+	    } catch (Exception e) {
+	        Map<String, String> response = new HashMap<>();
+	        response.put("message", "수업 삭제 실패");
+	        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 
 }

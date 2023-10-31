@@ -5,7 +5,6 @@
 <html>
 <head>
 <jsp:include page="../common/header_admin.jsp" />
-<head>
 <title>관리자 페이지 - 애니타임</title>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/admin/admin.css">
@@ -31,7 +30,7 @@
 }
 
 .container .box {
-	width: 90%;
+	width: 176%;
 	display: flex;
 }
 
@@ -53,7 +52,7 @@
 	height: 100%;
 	text-align: center;
 	font-size: 20px;
-	line-height: 125px;
+	line-height: 130px;
 	height: 150px;
 	color: #666;
 }
@@ -64,6 +63,11 @@
 	left: 0;
 	width: 100%;
 	width: 100%;
+}
+
+.daily {
+	width: 60px;
+	margin-bottom: 3px;
 }
 </style>
 </head>
@@ -87,7 +91,8 @@
 										<div class="d-flex align-items-center">
 											<div
 												class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-												<i class="bi bi-cart"></i>
+												<img class="daily"
+													src="${pageContext.request.contextPath}/resources/image/admin/school.png"></img>
 											</div>
 											<div class="ps-3">
 												<h6>${dataTrend.SCHOOLS}</h6>
@@ -124,7 +129,8 @@
 										<div class="d-flex align-items-center">
 											<div
 												class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-												<i class="bi bi-currency-dollar"></i>
+												<img class="daily"
+													src="${pageContext.request.contextPath}/resources/image/admin/post.png"></img>
 											</div>
 											<div class="ps-3">
 												<h6>${dataTrend.POSTS}</h6>
@@ -160,7 +166,8 @@
 										<div class="d-flex align-items-center">
 											<div
 												class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-												<i class="bi bi-people"></i>
+												<img class="daily"
+													src="${pageContext.request.contextPath}/resources/image/admin/user.png"></img>
 											</div>
 											<div class="ps-3">
 												<h6>${dataTrend.MEMBERS}</h6>
@@ -277,7 +284,7 @@
 									<div id="reportChart"
 										style="min-height: 365px; user-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0);"
 										class="echart" _echarts_instance_="ec_1698273089873">
-										<div id="piechart"></div>
+										<div id="piechart" style="width: 500px; height: 500px;"></div>
 									</div>
 								</div>
 							</div>
@@ -293,12 +300,43 @@
 
 <script type="text/javascript">
 $(function() {
+   
+	google.charts.load('current', {'packages':['corechart', 'table']});
+	google.charts.setOnLoadCallback(function() {
+	    drawTable();
+	    drawReportReasonChart();
+	    
+	    function drawTable() {
+	        var data_school = new google.visualization.DataTable();
+	        data_school.addColumn('string', '학교명');
+	        data_school.addColumn('number', '가입 학생 수');
+	        data_school.addRows([
+	            <c:forEach items="${schoolRanking}" var="schoolRanking" varStatus="loop">
+	            ["${schoolRanking.name}",  {v: ${schoolRanking.total_count}, f: '${schoolRanking.total_count} 명 '}]
+	             <c:if test="${!loop.last}">, </c:if>
+	            </c:forEach> 
+	        ]);
 
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawReportReasonChart);
-    google.charts.load('current', {'packages':['table']});
-    google.charts.setOnLoadCallback(drawTable);
-	 
+	        var table_school = new google.visualization.Table(document.getElementById('table_school'));
+	        table_school.draw(data_school, {showRowNumber: true, width: '100%', height: '110%', interactivity: 'none'});
+	        
+
+	        var data_table = new google.visualization.DataTable();
+	        data_table.addColumn('string', '학교명');
+	        data_table.addColumn('string', '게시판명');
+	        data_table.addColumn('number', '새 게시물');
+	        data_table.addRows([
+	            <c:forEach items="${boardRanking}" var="boardRanking" varStatus="loop">
+	            ["${boardRanking.SCHOOL_NAME}", "${boardRanking.NAME}",${boardRanking.NEW_POST}]
+	             <c:if test="${!loop.last}">, </c:if>
+	            </c:forEach> 
+	        ]);
+
+	        var table_board = new google.visualization.Table(document.getElementById('table_board'));
+	        table_board.draw(data_table, {showRowNumber: true, width: '100%', height: '100%'});
+        }
+    });
+    
     $('.chart').easyPieChart({
 	    size: 130,
 	    barColor: "#7868E6",
@@ -308,6 +346,7 @@ $(function() {
 	    lineCap: "circle",
 	    animate: 2000,
 	  });
+    
     // Students Registration Trend - Stack Chart
     var stackChartCanvas = document.getElementById('stackChart');
 
@@ -316,73 +355,87 @@ $(function() {
     	  	"${registrationTrend.DAY_STRING}"<c:if test="${!loop.last}">, </c:if>
     	  </c:forEach>
     	  ]; //day
-    	    
-	  const stackdata = {
-	    labels: labels,
-	    datasets: [
-	      {
-	        label: '기존 회원 수', // 전체 가입자 - 신규가입자
-	        data: [
-	        	<c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
-	        	  ${registrationTrend.PRE}<c:if test="${!loop.last}">, </c:if>
-	        	</c:forEach>
-	        	], //주간
-	        backgroundColor: '#FF6384',
-	        stack: 'Stack 0',
-	      },
-	      {
-	        label: '신규 회원 수', //신규 가입자 
-	        data: [
-	        	<c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
-		      	  ${registrationTrend.NEW_MEMBERS}<c:if test="${!loop.last}">, </c:if>
-		      	</c:forEach>
-		      	],
-	        backgroundColor: '#36A2EB',
-	        stack: 'Stack 0',
-	      },
-	      {
-	        label: '탈퇴 회원 수',
-	        data:[
-	        	<c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
-		      	  ${registrationTrend.WITHDRAWN_MEMBERS}*-1<c:if test="${!loop.last}">, </c:if>
-		      	</c:forEach>
-		      	],
-	        backgroundColor: '#4BC0C0',
-	        stack: 'Stack 1',
-	      },
-	    ]
-	  };
-	
-		  const stackChart = new Chart(stackChartCanvas, {
-			  type: 'bar',
-			  data: stackdata,
-			  options: {
-			    plugins: {
-			      title: {
-			        display: false,
-			        text: 'Chart.js Bar Chart - Stacked'
-			      }
-			    },
-			    responsive: true,
-			    interaction: {
-			      intersect: false,
-			    },
-			    scales: {
-			      x: {
-			        stacked: true,
-			      },
-			      y: {
-			        stacked: true
-			      }
-			    }
-			  }
-			});
-	  
-	});
+      const stackdata = {
+    		  labels: labels,
+    		  datasets: [
+    		    {
+    		      label: '기존 회원 수',
+    		      data: [
+    		        <c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
+    		          ${registrationTrend.PRE}<c:if test="${!loop.last}">, </c:if>
+    		        </c:forEach>
+    		      ],
+    		      backgroundColor: '#7F82FF',
+    		      borderColor: '#fff',
+    		      borderWidth: 3,
+    		      stack: 'Stack 0',
+    		    },
+    		    {
+    		      label: '신규 회원 수',
+    		      data: [
+    		        <c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
+    		          ${registrationTrend.NEW_MEMBERS}<c:if test="${!loop.last}">, </c:if>
+    		        </c:forEach>
+    		      ],
+    		      backgroundColor: '#29CCEF',
+    		      borderColor: '#fff',
+    		      borderWidth: 3,
+    		      stack: 'Stack 0',
+    		    },
+    		    {
+    		      label: '탈퇴 회원 수',
+    		      data: [
+    		        <c:forEach items="${registrationTrend}" var="registrationTrend" varStatus="loop">
+    		          ${registrationTrend.WITHDRAWN_MEMBERS * -1}<c:if test="${!loop.last}">, </c:if>
+    		        </c:forEach>
+    		      ],
+    		      backgroundColor: '#00DFA2',
+    		      borderColor: '#fff',
+    		      borderWidth: 3,
+    		      stack: 'Stack 1',
+    		    },
+    		  ],
+    		};
+      const stackChart = new Chart(stackChartCanvas, {
+    	  type: 'bar',
+    	  data: stackdata,
+    	  options: {
+    	    plugins: {
+    	      title: {
+    	        display: false,
+    	        text: 'Chart.js Bar Chart - Stacked',
+    	      },
+    	    },
+    	    responsive: true,
+    	    interaction: {
+    	      intersect: false,
+    	    },
+    	    scales: {
+    	      x: {
+    	        stacked: true,
+    	        grid: {
+    	          display: false,
+    	        },
+    	      },
+    	      y: {
+    	        stacked: true,
+    	        grid: {
+    	          display: true,
+    	          drawTicks: true,
+    	        },
+    	        ticks: {
+    	          stepSize: 3,
+    	        },
+    	      },
+    	    },
+    	    maxBarThickness: 30,
+    	    categorySpacing: 10,
+    	  },
+    	});
 
+	});
    ////////////////////////////////////////////////////////////////////////////////////////////////
       function drawReportReasonChart() {
-
         var reportReasonData = google.visualization.arrayToDataTable([
           ['신고 사유', '일별 신고 건수'],
         	<c:forEach items="${reportCount}" var="reportData" varStatus="loop">
@@ -400,48 +453,20 @@ $(function() {
         	] <c:if test="${!loop.last}">, </c:if>
           </c:forEach>
         ]);
-
         var reportReasonOptions = {
          		title: {
         			display: false,
-         		}
+         		},
+         		 colors: ['#7C83FD','#829DFF', '#96BAFF', '#7DEDFF', '#88FFF7', '#91FFE6','#87FFCE'],
+         		legend: {
+         		    position: 'bottom', // 범례 위치를 바닥으로 설정
+         		    maxLines:4,
+         		  }
         };
 
         var reportReasonChart = new google.visualization.PieChart(document.getElementById('piechart'));
 
         reportReasonChart.draw(reportReasonData, reportReasonOptions);
       }
-      
-	     ////////////////////////////////////////////////////////////////////////////////////////////////
-	  function drawTable() {
-	        var data_school = new google.visualization.DataTable();
-	        data_school.addColumn('string', 'School');
-	        data_school.addColumn('number', 'Number of Registrants');
-	        data_school.addRows([
-	        	<c:forEach items="${schoolRanking}" var="schoolRanking" varStatus="loop">
-	        	["${schoolRanking.name}", ${schoolRanking.total_count}]
-	        	 <c:if test="${!loop.last}">, </c:if>
-	        	</c:forEach> 
-	        ]);
-	
-	        var table_school = new google.visualization.Table(document.getElementById('table_school'));
-	        table_school.draw(data_school, {showRowNumber: true, width: '100%', height: '100%'});
-
-	        
-	        var data_table = new google.visualization.DataTable();
-	        data_table.addColumn('string', 'School');
-	        data_table.addColumn('string', 'Board');
-	        data_table.addColumn('number', 'Number of New Posts');
-	        data_table.addRows([
-	        	<c:forEach items="${boardRanking}" var="boardRanking" varStatus="loop">
-	        	["${boardRanking.SCHOOL_NAME}", "${boardRanking.NAME}",${boardRanking.NEW_POST}]
-	        	 <c:if test="${!loop.last}">, </c:if>
-	        	</c:forEach> 
-	        ]);
-	        
-	        var table_board = new google.visualization.Table(document.getElementById('table_board'));
-	        table_board.draw(data_table, {showRowNumber: true, width: '100%', height: '100%'});
-	      }
-  
     </script>
 </html>

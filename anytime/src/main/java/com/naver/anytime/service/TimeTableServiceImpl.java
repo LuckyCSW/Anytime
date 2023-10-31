@@ -30,12 +30,6 @@ public class TimeTableServiceImpl implements TimeTableService {
 		return timeDao.getTimetableByUserId(user_id);
 	}
 
-//	@Override
-//	public void changeName(int timetable_id, String newName) {
-//		timeDao.changeName(timetable_id, newName);
-//
-//	}
-
 	@Override
 	public void updateTimetable(int user_id, int timetable_id, String newName, int status) {
 		
@@ -101,7 +95,6 @@ public class TimeTableServiceImpl implements TimeTableService {
 		return timeDao.checkTimetable(user_id, semester);
 	}
 	
-	//시간표 링크진입 실험용
 	@Override
 	public TimeTable getTimeTableById(int timetable_id) {
 		return timeDao.getTimeTableById(timetable_id);
@@ -111,12 +104,13 @@ public class TimeTableServiceImpl implements TimeTableService {
     public void deleteTimetable(int user_id, int timetable_id, Integer status) {
 		timeDetailDao.deleteTimetableDetail(timetable_id);
 		timeDao.deleteTimetable(user_id, timetable_id, status);
-			
-			if(status == 1) {
-	        int nextId  = timeDao.findNextTimetable(user_id);
-	        	timeDao.updateToPrimary(nextId);
-			}
-	    }
-    
-
+		
+		if (status == 1) {
+            Integer nextId = timeDao.findNextTimetable(user_id);
+            if (nextId != null) {
+                // 다음 시간표를 기본 시간표로 업데이트
+                timeDao.updateToPrimary(nextId);
+            }
+        }
+    }
 }

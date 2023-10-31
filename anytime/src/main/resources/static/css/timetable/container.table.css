@@ -1,8 +1,8 @@
 @charset "utf-8";
 
-body {
+/* body {
 	overflow: hidden;
-}
+} */
 #bottom {
 	display: none;
 }
@@ -83,7 +83,7 @@ body {
 	background-image: url('/images/container.timetable.edit.png');
 }
 #container table.tablebody tr td ul.status li.del {
-	background-image: url('/images/container.timetable.del.png');
+	background-image: url('/anytime/resources/image/timetable/timetable.del.png');
 }
 
 #container div.nontimes {
@@ -160,11 +160,15 @@ body {
 
 @media only screen and (min-width: 641px) {
 	#container div.tablehead {
-		position: fixed; z-index: 90; margin-top: -52px; padding-top: 15px; width: 62.4%;
-		background-color: #f8f8f8;
+		position: fixed;
+    z-index: 90;
+    margin-top: -494px;
+    padding-top: 15px;
+    width: 62.4%;
+    background-color: #fff;
 	}
 	#container div.tablebody {
-		margin-top: 39px; width: inherit;
+		margin-top: 63px; width: inherit;
 	}
 }
 
