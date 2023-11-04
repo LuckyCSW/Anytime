@@ -60,7 +60,7 @@ public class SchoolController {
 				logger.info("인증된 사용자 : " + user.getUsername());
 				logger.info("유저 학교 도메인 : " + memberService.getSchoolDomain(id));
 
-				if (!schoolDomain.equals(memberService.getSchoolDomain(id))) {
+				if (user.getAuth().equals("ROLE_MEMBER") && !schoolDomain.equals(memberService.getSchoolDomain(id))) {
 					mv.setViewName("redirect:/" + memberService.getSchoolDomain(id));
 					logger.info("다른학교 출입");
 				}
@@ -88,7 +88,7 @@ public class SchoolController {
 			school.put("domain", schoolDomain);
 
 			mv.addObject("school", school);
-		}else {
+		} else {
 			mv.setViewName("redirect:/");
 		}
 
